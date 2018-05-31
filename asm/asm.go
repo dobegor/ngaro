@@ -61,7 +61,7 @@ var opcodes = [...][]string{
 	{"fmul"},
 	{"fdiv"},
 	{"ftoi"},
-	{"fitof"},
+	{"itof"},
 }
 
 // Assemble compiles assembly read from the supplied io.Reader and returns the
