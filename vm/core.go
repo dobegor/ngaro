@@ -18,6 +18,7 @@ package vm
 
 import (
 	"time"
+	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -55,6 +56,12 @@ const (
 	OpIn
 	OpOut
 	OpWait
+	OpFAdd
+	OpFSub
+	OpFMul
+	OpFDiv
+	OpFtoi
+	OpItof
 )
 
 // Tos returns the value of the Top item On the data Stack. Always returns 0 if
@@ -333,6 +340,44 @@ func (i *Instance) Run() (err error) {
 					}
 				}
 			}
+			i.PC++
+		case OpFAdd:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf += *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFSub:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf -= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFMul:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf *= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFDiv:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf /= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpItof:
+			f := (*float64)(unsafe.Pointer(&i.tos))
+			*f = float64(i.tos)
+
+			i.PC++
+		case OpFtoi:
+			f := *(*float64)(unsafe.Pointer(&i.tos))
+			i.tos = Cell(f)
+
 			i.PC++
 		default:
 			if op >= 0 || i.opHandler == nil { // let it panic if op < 0 and no opHandler is set
