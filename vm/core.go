@@ -90,6 +90,11 @@ func (i *Instance) Depth() int {
 	return i.sp
 }
 
+// RDepth returns the address stack depth.
+func (i *Instance) RDepth() int {
+	return i.rsp
+}
+
 // Drop removes the top item from the data stack.
 func (i *Instance) Drop() {
 	if i.sp == 0 {
