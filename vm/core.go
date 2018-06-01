@@ -51,6 +51,7 @@ const (
 	OpIn
 	OpOut
 	OpWait
+	OpCall
 )
 
 // Tos returns the value of the Top item On the data Stack. Always returns 0 if
@@ -330,26 +331,21 @@ func (i *Instance) Run() (err error) {
 				}
 			}
 			i.PC++
+		case OpCall:
+			i.rsp++
+			i.address[i.rsp] = i.rtos
+			i.rtos = Cell(i.PC + 1)
+			i.PC = int(i.Mem[i.PC+1])
 		default:
-			if op >= 0 || i.opHandler == nil { // let it panic if op < 0 and no opHandler is set
-				i.rsp++
-				i.address[i.rsp] = i.rtos
-				i.rtos, i.PC = Cell(i.PC), int(op)
-				// this is retro specific: most words have a pair of nop at the
-				// beginning to enable vectoring, skip them. This shaves of a few cycles.
-				if i.PC < len(i.Mem) && i.Mem[i.PC] == OpNop {
-					i.PC++
-				}
-				if i.PC < len(i.Mem) && i.Mem[i.PC] == OpNop {
-					i.PC++
-				}
-			} else if i.opHandler != nil {
+			if op < 0 && i.opHandler != nil {
 				// custom opcode
 				err = i.opHandler(i, op)
 				if err != nil {
 					return errors.Wrap(err, "custom opcode handler failed")
 				}
 				i.PC++
+			} else {
+				return errors.Errorf("invalid opcode %d", op)
 			}
 		}
 		i.insCount++

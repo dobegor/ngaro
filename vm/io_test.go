@@ -100,12 +100,12 @@ func Test_io_Caps(t *testing.T) {
 		.org 32
 		:io dup 3 ! out 0 0 out wait 3 @ in ;
 		:start
-			-6 5 io ( rstack size should be 1 (inside :io) )
-			42 push 42 push -6 5 io ( rstack size should be 3 (+1 inside :io) )
-			-13 5 io ( cell bits )
-			-14 5 io ( endianness )
-			-15 5 io ( port 8 enabled )
-			 1 1 io ( will cause EOF on nil input )`,
+			-6 5 call io ( rstack size should be 1 (inside :io) )
+			42 push 42 push -6 5 call io ( rstack size should be 3 (+1 inside :io) )
+			-13 5 call io ( cell bits )
+			-14 5 call io ( endianness )
+			-15 5 call io ( port 8 enabled )
+			 1 1 call io ( will cause EOF on nil input )`,
 		"io_Caps", vm.Output(vm.NewVT100Terminal(bytes.NewBuffer(nil), nil, nil)))
 	if errors.Cause(err) != io.EOF {
 		t.Fatalf("Unexpected error: %v", err)
@@ -134,7 +134,7 @@ func Test_multireader(t *testing.T) {
 		.org 32
 		:io dup push out 0 0 out wait pop in ;
 		:start
-		1 1 io ( read from input until EOF )
+		1 1 call io ( read from input until EOF )
 		jump start`,
 		"multireader",
 		vm.Input(strings.NewReader("56")),
@@ -159,13 +159,13 @@ func Test_port8(t *testing.T) {
 		.org 32
 		:io dup push out 0 0 out wait pop in ;
 		:start
-		1 3 io drop ( flush )
-		-11 5 io
-		-12 5 io
-		-1 1 2 io drop
-		0 0 1 8 io drop
-		0 2 8 io drop
-		0 3 8 io drop
+		1 3 call io drop ( flush )
+		-11 5 call io
+		-12 5 call io
+		-1 1 2 call io drop
+		0 0 1 8 call io drop
+		0 2 8 call io drop
+		0 3 8 call io drop
 		`,
 		"port8",
 		vm.Output(vm.NewVT100Terminal(bytes.NewBuffer(nil), flush, size)))
@@ -176,7 +176,7 @@ func Test_port8(t *testing.T) {
 		t.Fatal("Flush failed")
 	}
 	if i.Tos() != 24 {
-		t.Fatalf("Expected height: 24, got: %d", i.Tos)
+		t.Fatalf("Expected height: 24, got: %d", i.Tos())
 	}
 	if i.Nos() != 42 {
 		t.Fatalf("Expected width: 42, got: %d", i.Nos())
