@@ -66,6 +66,6 @@ The Ngaro Virtual Machine is Copyright (c) 2008-2016 Charles
 Childers (and many others), licensed under the ISC license.
 
 ## Contributors
-[Pavel Vasilev](github.com/exploser)
+[Pavel Vasilev](https://github.com/exploser/)
 
 [George Dobrovolsky](https://github.com/dobegor/)
