@@ -1,29 +1,14 @@
 GO ?= go
 PKG := github.com/db47h/ngaro
-SRC := vm/*.go cmd/retro/*.go asm/*.go
+SRC := vm/*.go asm/*.go
 
 .PHONY: all install clean test bench qbench get-deps cover-asm cover-vm report
 
 all: test
 
-retro: $(SRC)
-	$(GO) build $(PKG)/cmd/retro
-
-install:
-	$(GO) install $(PKG)/cmd/retro
-
-clean:
-	$(GO) clean -i $(PKG)/cmd/retro
-	$(RM) retro
-
-distclean:
-	$(GO) clean -i -r $(PKG)/cmd/retro
-	$(RM) retro
-
 test:
 ifeq ($(REPORT_COVERAGE),true)
 	$(GO) test $(PKG)/vm -covermode=count -coverprofile=coverage0.cov
-	$(GO) test $(PKG)/lang/retro -covermode=count -coverprofile=coverage1.cov
 	$(GO) test $(PKG)/asm -covermode=count -coverprofile=coverage2.cov
 	@echo "mode: count" > coverage.cov
 	@grep -v ^mode coverage0.cov >> coverage.cov
@@ -41,7 +26,6 @@ bench:
 
 cover:
 	$(GO) test $(PKG)/vm -covermode=count -coverprofile=coverage0.cov
-	$(GO) test $(PKG)/lang/retro -covermode=count -coverprofile=coverage1.cov
 	$(GO) test $(PKG)/asm -covermode=count -coverprofile=coverage2.cov
 	@echo "mode: count" > coverage.cov
 	@grep -v ^mode coverage0.cov >> coverage.cov
@@ -49,14 +33,6 @@ cover:
 	@grep -v ^mode coverage2.cov >> coverage.cov
 	$(GO) tool cover -html coverage.cov
 	@$(RM) coverage0.cov coverage1.cov coverage2.cov coverage.cov
-
-qbench: retroImage
-	/usr/bin/time -f '%Uu %Ss %er %MkB %C' ./retro <vm/testdata/core.rx >/dev/null
-
-retroImage: retro _misc/kernel.rx _misc/meta.rx _misc/stage2.rx
-	./retro -image vm/testdata/retroImage -ibits 32 -with _misc/meta.rx -with _misc/kernel.rx -o retroImage >/dev/null
-	./retro -with _misc/stage2.rx >/dev/null
-	if [ -e _misc/stage3.rx ]; then ./retro -with _misc/stage3.rx >/dev/null; fi
 
 report: $(SRC)
 	@echo "=== gocyclo ===\n"
