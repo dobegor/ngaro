@@ -98,7 +98,7 @@ func (i *Instance) RDepth() int {
 // Drop removes the top item from the data stack.
 func (i *Instance) Drop() {
 	if i.sp == 0 {
-		panic("data stack underflow")
+		panic(errors.New("data stack underflow"))
 	}
 
 	i.tos = i.data[i.sp]
@@ -123,7 +123,7 @@ func (i *Instance) Push(v Cell) {
 // Pop pops the value on top of the data stack and returns it.
 func (i *Instance) Pop() Cell {
 	if i.sp == 0 {
-		panic("data stack underflow")
+		panic(errors.New("data stack underflow"))
 	}
 
 	tos := i.tos
@@ -141,7 +141,7 @@ func (i *Instance) Rpush(v Cell) {
 // Rpop pops the value on top of the address stack and returns it.
 func (i *Instance) Rpop() Cell {
 	if i.rsp == 0 {
-		panic("return stack underflow")
+		panic(errors.New("return stack underflow"))
 	}
 
 	rtos := i.rtos
