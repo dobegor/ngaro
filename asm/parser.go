@@ -1,4 +1,4 @@
-// This file is part of ngaro - https://github.com/db47h/ngaro
+// This file is part of ngaro - https://github.com/dobegor/ngaro
 //
 // Copyright 2016 Denis Bernard <db047h@gmail.com>
 //
@@ -24,7 +24,7 @@ import (
 	"text/scanner"
 	"unicode"
 
-	"github.com/db47h/ngaro/vm"
+	"github.com/dobegor/ngaro/vm"
 )
 
 const localSep = "·"

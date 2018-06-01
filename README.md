@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/db47h/ngaro.svg?branch=master)](https://travis-ci.org/db47h/ngaro)
-[![Go Report Card](https://goreportcard.com/badge/github.com/db47h/ngaro)](https://goreportcard.com/report/github.com/db47h/ngaro)
-[![Coverage Status](https://coveralls.io/repos/github/db47h/ngaro/badge.svg)](https://coveralls.io/github/db47h/ngaro)
-[![GoDoc](https://godoc.org/github.com/db47h/ngaro/vm?status.svg)](https://godoc.org/github.com/db47h/ngaro/vm)
+[![Build Status](https://travis-ci.org/dobegor/ngaro.svg?branch=master)](https://travis-ci.org/dobegor/ngaro)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dobegor/ngaro)](https://goreportcard.com/report/github.com/dobegor/ngaro)
+[![Coverage Status](https://coveralls.io/repos/github/dobegor/ngaro/badge.svg)](https://coveralls.io/github/dobegor/ngaro)
+[![GoDoc](https://godoc.org/github.com/dobegor/ngaro/vm?status.svg)](https://godoc.org/github.com/dobegor/ngaro/vm)
 
 # Ngaro Go
 
@@ -9,10 +9,10 @@
 This is an embeddable Go implementation of the [Ngaro Virtual Machine](http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html).
 
 This repository contains the embeddable [virtual
-machine](https://godoc.org/github.com/db47h/ngaro/vm), a rudimentary
-[symbolic assembler](https://godoc.org/github.com/db47h/ngaro/asm)
+machine](https://godoc.org/github.com/dobegor/ngaro/vm), a rudimentary
+[symbolic assembler](https://godoc.org/github.com/dobegor/ngaro/asm)
 for easy bootstrapping of projects written in Ngaro machine language, and the
-[retro](https://godoc.org/github.com/db47h/ngaro/cmd/retro) command
+[retro](https://godoc.org/github.com/dobegor/ngaro/cmd/retro) command
 line tool that can be used as a replacement for the Retro reference
 implementations.
 
@@ -56,16 +56,16 @@ adjust it accordingly (i.e. set it to its real target minus one).
 
 Install the retro command line tool:
 
-	go get -u github.com/db47h/ngaro/cmd/retro
+	go get -u github.com/dobegor/ngaro/cmd/retro
 
 Test:
 
-	go test -i github.com/db47h/ngaro/vm
-	go test -v github.com/db47h/ngaro/vm/...
+	go test -i github.com/dobegor/ngaro/vm
+	go test -v github.com/dobegor/ngaro/vm/...
 
 Build a retroImage:
 
-	cd $GOPATH/github.com/db47h/ngaro/cmd/retro
+	cd $GOPATH/github.com/dobegor/ngaro/cmd/retro
 	make retroImage
 
 Test the retro command line tool:
@@ -106,7 +106,7 @@ If for some reason you need a specific cell size, regardless of the target
 platform's native int size, you can force it by compiling with the tags
 `ngaro32` or `ngaro64`:
 
-	go install -tags ngaro32 github.com/db47h/ngaro/cmd/retro
+	go install -tags ngaro32 github.com/dobegor/ngaro/cmd/retro
 
 will build a version of retro that uses 32 bits cells, regardless of
 `GOOS`/`GOARCH`. Likewise, the `ngaro64` tag will force 64 bits cells, even on
@@ -118,9 +118,9 @@ This project uses [semantic
 versioning](http://dave.cheney.net/2016/06/24/gophers-please-tag-your-releases)
 and tries to adhere to it.
 
-See the [releases page](https://github.com/db47h/ngaro/releases).
+See the [releases page](https://github.com/dobegor/ngaro/releases).
 
-For a detailed change log, see the [commit log](https://github.com/db47h/ngaro/commits/master).
+For a detailed change log, see the [commit log](https://github.com/dobegor/ngaro/commits/master).
 
 ## License
 

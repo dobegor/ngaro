@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/db47h/ngaro/asm"
+	"github.com/dobegor/ngaro/asm"
 )
 
 // Shows off some of the assembler features (although the example assembly program

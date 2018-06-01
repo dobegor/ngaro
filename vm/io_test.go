@@ -1,4 +1,4 @@
-// This file is part of ngaro - https://github.com/db47h/ngaro
+// This file is part of ngaro - https://github.com/dobegor/ngaro
 //
 // Copyright 2016 Denis Bernard <db047h@gmail.com>
 //
@@ -24,8 +24,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/db47h/ngaro/asm"
-	"github.com/db47h/ngaro/vm"
+	"github.com/dobegor/ngaro/asm"
+	"github.com/dobegor/ngaro/vm"
 	"github.com/pkg/errors"
 )
 

@@ -1,5 +1,5 @@
 GO ?= go
-PKG := github.com/db47h/ngaro
+PKG := github.com/dobegor/ngaro
 SRC := vm/*.go asm/*.go
 
 .PHONY: all install clean test bench qbench get-deps cover-asm cover-vm report

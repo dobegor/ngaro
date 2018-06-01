@@ -1,4 +1,4 @@
-// This file is part of ngaro - https://github.com/db47h/ngaro
+// This file is part of ngaro - https://github.com/dobegor/ngaro
 //
 // Copyright 2016 Denis Bernard <db047h@gmail.com>
 //
@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/db47h/ngaro/asm"
+	"github.com/dobegor/ngaro/asm"
 )
 
 // check some errors. We're not checking the whole messages, rather that they point at
