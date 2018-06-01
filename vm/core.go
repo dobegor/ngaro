@@ -150,6 +150,15 @@ func (i *Instance) Rpop() Cell {
 	return rtos
 }
 
+func (i *Instance) Stop() <-chan struct{} {
+	i.stopCh = make(chan struct{})
+	return i.stopCh
+}
+
+func (i *Instance) Stopped() bool {
+	return i.stopped
+}
+
 // Run starts execution of the VM.
 //
 // If an error occurs, the PC will will point to the instruction that triggered
@@ -181,6 +190,8 @@ func (i *Instance) Rpop() Cell {
 // If the last input stream gets closed, the VM will exit and the root cause
 // error will be io.EOF. This is a normal exit condition in most use cases.
 func (i *Instance) Run() (err error) {
+	i.stopped = false
+
 	defer func() {
 		if e := recover(); e != nil {
 			switch e := e.(type) {
@@ -194,6 +205,12 @@ func (i *Instance) Run() (err error) {
 	}()
 	i.insCount = 0
 	for i.PC < len(i.Mem) {
+		if i.stopCh != nil {
+			i.stopped = true
+			close(i.stopCh)
+			i.stopCh = nil
+		}
+
 		op := i.Mem[i.PC]
 		switch op {
 		case OpNop:

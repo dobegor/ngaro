@@ -62,6 +62,8 @@ type Instance struct {
 	files       map[Cell]*os.File
 	memDump     func(string, []Cell) error
 	clockPeriod time.Duration
+	stopped     bool
+	stopCh      chan struct{}
 }
 
 // Option interface
