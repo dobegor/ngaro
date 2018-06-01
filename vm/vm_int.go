@@ -14,8 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//+build !ngaro32,!ngaro64
-
 package vm
 
 // Cell is the basic type stored in a VM memory location.
