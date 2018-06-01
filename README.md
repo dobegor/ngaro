@@ -16,6 +16,7 @@ Fork was created to:
 Also the 32 bit support was phased out.
 
 Current TODO:
+- assembler to parse float literals
 - interrupts support (`OpIRQ` and `OpINT` opcodes, external host-vm interrupts, runtime exception interrupts, such as divide by zero)
 - ability to dump / restore full VM state (memory, stacks, instruction pointer)
 - a simple language compiler with this VM as a target
