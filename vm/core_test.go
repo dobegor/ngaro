@@ -28,7 +28,6 @@ import (
 
 type C []vm.Cell
 
-var retroImage = "testdata/retroImage"
 var imageBits = 32
 
 func runImage(img []vm.Cell, name string, opts ...vm.Option) (*vm.Instance, error) {
@@ -255,15 +254,6 @@ func Test_Fib_AsmRecursive(t *testing.T) {
 	check(t, "Fib_AsmRecursive", p, 0, C{832040}, nil)
 }
 
-func Test_Fib_RetroLoop(t *testing.T) {
-	fib := ": fib [ 0 1 ] dip 1- [ dup [ + ] dip swap ] times swap drop ; 30 fib bye\n"
-	i, _ := runImageFile(retroImage, imageBits, vm.Input(strings.NewReader(fib)))
-	for c := len(i.Address()); c > 0; c-- {
-		i.Rpop()
-	}
-	check(t, "Fib_RetroLoop", i, 0, C{832040}, nil)
-}
-
 func Benchmark_Fib_Opcode(b *testing.B) {
 	img, err := asm.Assemble("fib-opcode", strings.NewReader(fibOpcode))
 	if err != nil {
@@ -304,30 +294,6 @@ func Benchmark_Fib_AsmRecursive(b *testing.B) {
 		i.Run()
 		i.Pop()
 		i.Push(35)
-	}
-}
-
-func Benchmark_Fib_RetroLoop(b *testing.B) {
-	fib := ": fib [ 0 1 ] dip 1- [ dup [ + ] dip swap ] times swap drop ; 35 fib bye\n"
-	for c := 0; c < b.N; c++ {
-		b.StopTimer()
-		img, _, _ := vm.Load(retroImage, 50000, imageBits)
-		i, _ := vm.New(img, retroImage,
-			vm.Input(strings.NewReader(fib)))
-		b.StartTimer()
-		i.Run()
-	}
-}
-
-func Benchmark_Fib_RetroRecursive(b *testing.B) {
-	fib := ": fib dup 2 < if; 1- dup fib swap 1- fib + ; 35 fib bye\n"
-	for c := 0; c < b.N; c++ {
-		b.StopTimer()
-		img, _, _ := vm.Load(retroImage, 50000, imageBits)
-		i, _ := vm.New(img, retroImage,
-			vm.Input(strings.NewReader(fib)))
-		b.StartTimer()
-		i.Run()
 	}
 }
 
