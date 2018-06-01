@@ -56,6 +56,7 @@ var opcodes = [...][]string{
 	{"in"},
 	{"out"},
 	{"wait"},
+	{"call"},
 	{"fadd"},
 	{"fsub"},
 	{"fmul"},

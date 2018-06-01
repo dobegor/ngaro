@@ -128,13 +128,13 @@ var tests = [...]struct {
 	{"push", "82 push", nil, C{82}, -1},
 	{"pop", "82 push pop", C{82}, nil, -1},
 	{"loop", "3 :REPEAT dup push loop REPEAT", nil, C{3, 2, 1}, -1},
-	{"call", "func .org 32 :func 1 2", C{1, 2}, C{0}, -1},
-	{"return", "func end .org 32 :func -2 ; :end -1", C{-2, -1}, C{1}, -1},
-	{"ZeroExit", `fallthrough return quit
+	{"call", "call func .org 32 :func 1 2", C{1, 2}, C{1}, -1},
+	{"return", "call func call end .org 32 :func -2 ; :end -1", C{-2, -1}, C{3}, -1},
+	{"ZeroExit", `call fallthrough call return call quit
 				  .org 32
 				  :fallthrough 0 1 0;
 				  :return     -1 0 0;
-				  :quit`, C{0, 1, -1, -1}, C{2}, -1},
+				  :quit`, C{0, 1, -1, -1}, C{5}, -1},
 	{"jump", "1 2 jump OVER 3 4 5 :OVER 6 7", C{1, 2, 6, 7}, nil, -1},
 	{"<jump", "2 1 <jump END 12 1 2 <jump END 21 :END", C{12}, nil, -1},
 	{">jump", "1 2 >jump END 21 2 1 >jump END 12 :END", C{21}, nil, -1},
@@ -192,13 +192,13 @@ var fib = `
 
 var fibRec = `
 	( recursive fib )
-	fib
+	call fib
 	jump end
 .org 32
 :fib
 	dup	1 >jump 0+ ;
-:0	1- dup fib swap
-	1- fib
+:0	1- dup call fib swap
+	1- call fib
 	+ ;
 :end
 `

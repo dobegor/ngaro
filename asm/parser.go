@@ -412,7 +412,7 @@ func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 				if op, ok := p.opcodes[s]; state == 0 && ok {
 					p.write(op)
 					switch op {
-					case vm.OpLit, vm.OpLoop, vm.OpJump, vm.OpGtJump, vm.OpLtJump, vm.OpNeJump, vm.OpEqJump:
+					case vm.OpLit, vm.OpLoop, vm.OpJump, vm.OpGtJump, vm.OpLtJump, vm.OpNeJump, vm.OpEqJump, vm.OpCall:
 						state = 1
 					}
 				} else {
