@@ -1,137 +1,71 @@
-[![Build Status](https://travis-ci.org/dobegor/ngaro.svg?branch=master)](https://travis-ci.org/dobegor/ngaro)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dobegor/ngaro)](https://goreportcard.com/report/github.com/dobegor/ngaro)
-[![Coverage Status](https://coveralls.io/repos/github/dobegor/ngaro/badge.svg)](https://coveralls.io/github/dobegor/ngaro)
 [![GoDoc](https://godoc.org/github.com/dobegor/ngaro/vm?status.svg)](https://godoc.org/github.com/dobegor/ngaro/vm)
 
 # Ngaro Go
 
 ## <a name="pkg-overview">Overview</a>
-This is an embeddable Go implementation of the [Ngaro Virtual Machine](http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html).
+This is a fork of an original embeddable Go implementation of the [Ngaro Virtual Machine](http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html) by [Denis Bernard](https://github.com/db47h/ngaro).
+
+Fork was created to: 
+- add float opcodes support into VM 
+- add support to limit performance via `ClockPeriod` option
+- remove implicit calls for cells with values over 30 
+- adding an explicit `OpCall` opcode
+- implementing `Stop()` method to gracefully pause the VM with ability to continue with `Run()`
+
+Also the 32 bit support was phased out.
+
+Current TODO:
+- interrupts support (`OpIRQ` and `OpINT` opcodes, external host-vm interrupts, runtime exception interrupts, such as divide by zero)
+- ability to dump / restore full VM state (memory, stacks, instruction pointer)
+- a simple language compiler with this VM as a target
+- update assembler docs and VM spec accordingly
 
 This repository contains the embeddable [virtual
-machine](https://godoc.org/github.com/dobegor/ngaro/vm), a rudimentary
+machine](https://godoc.org/github.com/dobegor/ngaro/vm) and a rudimentary
 [symbolic assembler](https://godoc.org/github.com/dobegor/ngaro/asm)
-for easy bootstrapping of projects written in Ngaro machine language, and the
-[retro](https://godoc.org/github.com/dobegor/ngaro/cmd/retro) command
-line tool that can be used as a replacement for the Retro reference
-implementations.
-
-Please visit http://forthworks.com/retro/ to get you started about the Retro
-language and the Ngaro Virtual Machine.
+for easy bootstrapping of projects written in Ngaro machine language.
 
 The main purpose of this implementation is to allow customization and
-communication between Retro programs and Go programs via custom opcodes and
-I/O handlers (i.e. scripting Go programs in Retro). The package examples
-demonstrate various use cases. For more details on I/O handling in the Ngaro
-VM, please refer to http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html.
+communication between embeddable programs and Go programs via custom opcodes and
+I/O handlers. The package examples demonstrate various use cases. 
+For more details on I/O handling in the Ngaro VM, please refer to http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html.
 
 Another goal is to make the VM core as neutral as possible regarding the higher
 level language running on it. For example, the in-memory string encoding scheme
-is fully customizable. Retro specific behaviors are provided via the lang/retro
-package.
+is fully customizable.
 
-Custom opcodes are implemented by intercepting implicit calls to negative memory
-addresses. This allows the VM to be fully backwards compatible with existing
-Retro images while still providing enhanced capabilities. The maximum number of
-addressable cells is 2^31 when running in 32 bits mode (that's 8GiB or memory on
-the host). The range [-2^31 - 1, -1] is available for custom opcodes.
+Custom opcodes are implemented by providing a opcode handler for cells with negative values.
+The maximum number of addressable cells is 2^63. The range [-2^63 - 1, -1] is available
+for custom opcodes.
 
-This implementation passes all tests from the retro-language test suite and
-its performance when running tests/core.rx is slightly better than with the
-reference implementations:
+For all intents and purposes, the VM behaves according to the specification, except the 
+aforementioned changes in this fork.
 
-	1.08s for this implementation, no custom opcodes, compiled with Go 1.7, linux/amd64
-	1.15s for the reference assembly implementation, linux/386
-	1.30s for the reference Go implementation, compiled with Go 1.7, linux/amd64
-	2.00s for the reference C implementation, compiled with gcc-5.4 -O3 -fomit-frame-pointer
-
-Yes, Go 1.7's new SSA backend is THAT good on this type of workload :)
-
-For all intents and purposes, the VM behaves according to the specification.
 This is of particular importance to implementors of custom opcodes: the VM
 always increments the PC after each opcode, thus opcodes altering the PC must
 adjust it accordingly (i.e. set it to its real target minus one).
 
 ## Installing
 
-Install the retro command line tool:
+Install the library:
 
-	go get -u github.com/dobegor/ngaro/cmd/retro
+	go get -u -v github.com/dobegor/ngaro/...
 
 Test:
 
 	go test -i github.com/dobegor/ngaro/vm
 	go test -v github.com/dobegor/ngaro/vm/...
 
-Build a retroImage:
-
-	cd $GOPATH/github.com/dobegor/ngaro/cmd/retro
-	make retroImage
-
-Test the retro command line tool:
-
-	./retro --with vm/testdata/core.rx
-
-Should generate a lot of output. Just check that the last lines look like this:
-
-	ok   summary
-	360 tests run: 360 passed, 0 failed.
-	186 words checked, 0 words unchecked, 37 i/o words ignored.
-
-	ok  bye
-
-## Support for 32/64 bits memory images on all architectures
-
-Since v2.0.0, the default Cell type (the base data type in Ngaro VM) is Go's
-int. This means that depending on the target you compile for, it will be either
-32 or 64 bits. The retro command line tool supports loading and saving retro
-memory images where Cells can be either size. For example, to quickly get
-started you can do this:
-
-	echo "save bye" | \
-	retro -image vm/testdata/retroImage -ibits 32 -o retroImage
-
-This will load the memory image file `vm/testdata/retroImage` which we know to
-be encoded using 32 bits cells, and save it in the current directory with
-whatever encoding is the default for your platform. You could also force a
-specific output Cell size with the `-obits` flag.
-
-Loading and saving with encodings different from the target platform is safe:
-it will work or generate an error, but never create a corrupted memory
-image file. For example, with a 64 bits retro binary, saving to 32 bits cells
-will check that written values fit in a 32 bit int. If not, it will generate an
-error.
-
-If for some reason you need a specific cell size, regardless of the target
-platform's native int size, you can force it by compiling with the tags
-`ngaro32` or `ngaro64`:
-
-	go install -tags ngaro32 github.com/dobegor/ngaro/cmd/retro
-
-will build a version of retro that uses 32 bits cells, regardless of
-`GOOS`/`GOARCH`. Likewise, the `ngaro64` tag will force 64 bits cells, even on
-32 bits targets (it'll be twice as slow though).
-
-## Releases
-
-This project uses [semantic
-versioning](http://dave.cheney.net/2016/06/24/gophers-please-tag-your-releases)
-and tries to adhere to it.
-
-See the [releases page](https://github.com/dobegor/ngaro/releases).
-
-For a detailed change log, see the [commit log](https://github.com/dobegor/ngaro/commits/master).
-
 ## License
 
 This project is Copyright 2016 Denis Bernard <db047h@gmail.com>, licensed under
 the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-The Retro language and Ngaro Virtual Machine are Copyright (c) 2008-2016 Charles
-Childers (and many others), licensed under the ISC license. See the file
-LICENSE-RETRO at the root of this repository for more details as well as a full
-list of contributors.
+The Ngaro Virtual Machine is Copyright (c) 2008-2016 Charles
+Childers (and many others), licensed under the ISC license.
 
-Note that all files in the \_misc and vm/testdata folders are verbatim copies
-from the retro-language project. As such, only Retro's ISC license applies to
-these files.
+## Contributors
+[Pavel Vasilev](github.com/exploser)
+
+[George Dobrovolsky](https://github.com/dobegor/)
