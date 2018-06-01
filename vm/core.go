@@ -16,7 +16,12 @@
 
 package vm
 
-import "github.com/pkg/errors"
+import (
+	"time"
+	"unsafe"
+
+	"github.com/pkg/errors"
+)
 
 // Ngaro Virtual Machine Opcodes.
 const (
@@ -52,6 +57,12 @@ const (
 	OpOut
 	OpWait
 	OpCall
+	OpFAdd
+	OpFSub
+	OpFMul
+	OpFDiv
+	OpFtoi
+	OpItof
 )
 
 // Tos returns the value of the Top item On the data Stack. Always returns 0 if
@@ -336,6 +347,44 @@ func (i *Instance) Run() (err error) {
 			i.address[i.rsp] = i.rtos
 			i.rtos = Cell(i.PC + 1)
 			i.PC = int(i.Mem[i.PC+1])
+		case OpFAdd:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf += *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFSub:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf -= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFMul:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf *= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpFDiv:
+			rhs := i.Pop()
+
+			lhsf := (*float64)(unsafe.Pointer(&i.tos))
+			*lhsf /= *(*float64)(unsafe.Pointer(&rhs))
+
+			i.PC++
+		case OpItof:
+			f := (*float64)(unsafe.Pointer(&i.tos))
+			*f = float64(i.tos)
+
+			i.PC++
+		case OpFtoi:
+			f := *(*float64)(unsafe.Pointer(&i.tos))
+			i.tos = Cell(f)
+
+			i.PC++
 		default:
 			if op < 0 && i.opHandler != nil {
 				// custom opcode
@@ -349,6 +398,7 @@ func (i *Instance) Run() (err error) {
 			}
 		}
 		i.insCount++
+		time.Sleep(i.clockPeriod)
 	}
 	return nil
 }

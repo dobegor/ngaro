@@ -57,6 +57,12 @@ var opcodes = [...][]string{
 	{"out"},
 	{"wait"},
 	{"call"},
+	{"fadd"},
+	{"fsub"},
+	{"fmul"},
+	{"fdiv"},
+	{"ftoi"},
+	{"itof"},
 }
 
 // Assemble compiles assembly read from the supplied io.Reader and returns the

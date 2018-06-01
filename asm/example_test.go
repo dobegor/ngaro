@@ -22,7 +22,7 @@ func ExampleAssemble() {
 		SOMECONST   ( const literal )
 		drop
 		drop
-		foo			( implicit call to label foo )
+		call foo			( call to label foo )
 		pop
 		lit table	( address of table )
 		'x'			( char literal, compiles as lit 'x' )
@@ -53,47 +53,48 @@ func ExampleAssemble() {
 	asm.DisassembleAll(img, 0, os.Stdout)
 
 	// Output:
-	//          0	nop
-	//          1	123
-	//          3	42
-	//          5	drop
-	//          6	drop
-	//          7	.dat 32	( call 32 )
-	//          8	pop
-	//          9	40
-	//         11	120
-	//         13	nop
-	//         14	nop
-	//         15	nop
-	//         16	nop
-	//         17	nop
-	//         18	nop
-	//         19	nop
-	//         20	nop
-	//         21	nop
-	//         22	nop
-	//         23	nop
-	//         24	nop
-	//         25	nop
-	//         26	nop
-	//         27	nop
-	//         28	nop
-	//         29	nop
-	//         30	nop
-	//         31	nop
-	//         32	42
-	//         34	.dat 37	( call 37 )
-	//         35	drop
-	//         36	;
-	//         37	1+
-	//         38	;
-	//         39	.dat -1	( call -1 )
-	//         40	.dat -100	( call -100 )
-	//         41	.dat 438	( call 438 )
-	//         42	.dat 39	( call 39 )
-	//         43	.dat 8243	( call 8243 )
-	//         44	.dat 42	( call 42 )
-	//         45	.dat 32	( call 32 )
+
+	// 	0       nop
+	// 	1      123
+	// 	3      42
+	// 	5      drop
+	// 	6      drop
+	// 	7      .dat 32 ( call 32 )
+	// 	8      pop
+	// 	9      40
+	//    11      120
+	//    13      nop
+	//    14      nop
+	//    15      nop
+	//    16      nop
+	//    17      nop
+	//    18      nop
+	//    19      nop
+	//    20      nop
+	//    21      nop
+	//    22      nop
+	//    23      nop
+	//    24      nop
+	//    25      nop
+	//    26      nop
+	//    27      nop
+	//    28      nop
+	//    29      nop
+	//    30      nop
+	//    31      nop
+	//    32      42
+	//    34      .dat 37 ( call 37 )
+	//    35      drop
+	//    36      ;
+	//    37      1+
+	//    38      ;
+	//    39      .dat -1 ( call -1 )
+	//    40      .dat -100       ( call -100 )
+	//    41      .dat 438        ( call 438 )
+	//    42      .dat 39 ( call 39 )
+	//    43      .dat 8243       ( call 8243 )
+	//    44      .dat 42 ( call 42 )
+	//    45      .dat 32 ( call 32 )
 }
 
 // Disassemble is pretty straightforward. Here we Disassemble a hand crafted
@@ -131,7 +132,6 @@ func ExampleDisassemble() {
 
 	// Partial diasssembly. Set base accordingly so that the address column is correct.
 	asm.DisassembleAll(img[15:20], 15, os.Stdout)
-
 	// Output:
 	//    0	push
 	//    1	0
