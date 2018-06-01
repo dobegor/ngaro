@@ -203,12 +203,14 @@ func (i *Instance) Run() (err error) {
 			}
 		}
 	}()
+
 	i.insCount = 0
 	for i.PC < len(i.Mem) {
 		if i.stopCh != nil {
 			i.stopped = true
 			close(i.stopCh)
 			i.stopCh = nil
+			return nil
 		}
 
 		op := i.Mem[i.PC]
