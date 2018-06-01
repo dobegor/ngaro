@@ -343,9 +343,7 @@ func (i *Instance) Run() (err error) {
 			}
 			i.PC++
 		case OpCall:
-			i.rsp++
-			i.address[i.rsp] = i.rtos
-			i.rtos = Cell(i.PC + 1)
+			i.Rpush(Cell(i.PC + 1))
 			i.PC = int(i.Mem[i.PC+1])
 		case OpFAdd:
 			rhs := i.Pop()
