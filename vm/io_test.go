@@ -25,63 +25,9 @@ import (
 	"unsafe"
 
 	"github.com/db47h/ngaro/asm"
-	"github.com/db47h/ngaro/lang/retro"
 	"github.com/db47h/ngaro/vm"
 	"github.com/pkg/errors"
 )
-
-func Test_io_GetEnv(t *testing.T) {
-	var b = bytes.NewBuffer(nil)
-	_, err := runImageFile(retroImage, imageBits,
-		vm.Output(vm.NewVT100Terminal(b, nil, nil)),
-		vm.StringCodec(retro.StringCodec),
-		vm.Input(strings.NewReader(": pEnv here dup push swap getEnv cr pop puts bye ; \"PATH\" pEnv ")))
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	out := bytes.Split(b.Bytes(), []byte{'\n'})
-	envRetro := string(out[len(out)-2])
-	envGo := os.Getenv("PATH")
-	assertEqual(t, "GetEnv", envGo, envRetro)
-}
-
-func Test_io_Files(t *testing.T) {
-	err := os.Chdir("testdata")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Chdir("..")
-	var b = bytes.NewBuffer(nil)
-	_, err = runImageFile("retroImage", imageBits,
-		vm.Output(vm.NewVT100Terminal(b, nil, nil)),
-		vm.StringCodec(retro.StringCodec),
-		vm.Input(strings.NewReader("\"files.rx\" :include\n")))
-	if err != nil {
-		t.Fatal(err)
-	}
-	lines := bytes.Split(b.Bytes(), []byte{'\n'})
-	assertEqual(t, "io_Files", "51 tests run: 51 passed, 0 failed.", string(lines[len(lines)-5]))
-	assertEqual(t, "io_Files", "15 words checked, 0 words unchecked, 0 i/o words ignored.", string(lines[len(lines)-4]))
-
-	// try to open a file with a dummy mode
-	i, err := runAsmImage(`jump start
-		:fileName .dat "retroImage"
-		.org 32
-		:io dup push out 0 0 out wait pop in ;
-		:start
-			lit fileName 0 -1 4 io dup	( open retroImage, should work and return fd = 1 )
-			-4 4 io 					( close, should work and return 0 )
-			lit fileName 77 -1 4 io		( should fail )`,
-		"io_Caps",
-		vm.StringCodec(retro.StringCodec))
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	assertEqualI(t, "io_Files data stack size", 3, i.Depth())
-	assertEqualI(t, "io_Files dummy mode", 0, int(i.Pop()))
-	assertEqualI(t, "io_Files close", 0, int(i.Pop()))
-	assertEqualI(t, "io_Files fd", 1, int(i.Pop()))
-}
 
 func Test_io_Stacks(t *testing.T) {
 	i, err := runAsmImage("-16 5 out 0 0 out wait 5 in -17 5 out 0 0 out wait 5 in", "io_Stacks",
