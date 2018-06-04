@@ -17,7 +17,6 @@
 package vm
 
 import (
-	"time"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -426,7 +425,9 @@ func (i *Instance) Run() (err error) {
 			}
 		}
 		i.insCount++
-		time.Sleep(i.clockPeriod)
+		if i.tickFn != nil && i.insCount&i.tickMask == 0 {
+			i.tickFn(i)
+		}
 	}
 	return nil
 }

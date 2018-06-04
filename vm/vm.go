@@ -40,42 +40,135 @@ const (
 
 // Instance represents an Ngaro VM instance.
 type Instance struct {
-	PC          int    // Program Counter (aka. Instruction Pointer)
-	Mem         []Cell // Memory image
-	Ports       []Cell // I/O ports
-	tos         Cell   // cell on top of stack
-	sp          int
-	rsp         int
-	rtos        Cell
-	data        []Cell
-	address     []Cell
-	insCount    int64
-	inH         map[Cell]InHandler
-	outH        map[Cell]OutHandler
-	waitH       map[Cell]WaitHandler
-	sEnc        Codec
-	opHandler   OpcodeHandler
-	imageFile   string
-	input       io.Reader
-	output      Terminal
-	fid         Cell
-	files       map[Cell]*os.File
-	memDump     func(string, []Cell) error
-	clockPeriod time.Duration
-	stopped     bool
-	stopCh      chan struct{}
+	PC        int    // Program Counter (aka. Instruction Pointer)
+	Mem       []Cell // Memory image
+	Ports     []Cell // I/O ports
+	tos       Cell   // cell on top of stack
+	sp        int
+	rsp       int
+	rtos      Cell
+	data      []Cell
+	address   []Cell
+	insCount  int64
+	inH       map[Cell]InHandler
+	outH      map[Cell]OutHandler
+	waitH     map[Cell]WaitHandler
+	sEnc      Codec
+	opHandler OpcodeHandler
+	imageFile string
+	input     io.Reader
+	output    Terminal
+	fid       Cell
+	files     map[Cell]*os.File
+	memDump   func(string, []Cell) error
+	tickMask  int64
+	tickFn    func(i *Instance)
+	stopped   bool
+	stopCh    chan struct{}
 }
 
-// Option interface
+// An Option is a function for setting a VM Instance's options in New.
+//
+// Note that Option functions directly set instance parameters without going
+// through a delegate config structure, and since there is no locking mechanism
+// to access an Instance's fields, Option functions must only be used in a call
+// to New.
+//
+// The only exception is from a ticker function registered with Ticker where
+// the VM is actually paused during the call.
+//
+// There are plans to change this and use a delegate config structure.
+//
 type Option func(*Instance) error
 
-// ClockPeriod sets the period between VM ticks. A zero or negative period means no pause.
-// Default is zero.
-func ClockPeriod(period time.Duration) Option {
+// ClockLimiter returns a ticker function that sets the period between VM ticks.
+// Its return values can be fed directly into Ticker().
+//
+// A zero or negative period means no pause.
+//
+// Since calling time.Sleep() on every tick is not efficient, the
+// resolution sets the maximum real interval between calls to time.Sleep().
+//
+// resolution is adjusted to be no smaller than period and so that the
+// returned tick value is a power of two while keeping the period accurate.
+//
+// Multiple ticker functions can be chained with a clock limiter:
+//
+//	// simulate a clock frequency of 20MHz with a call to the ticker function at most every 16ms (1/60s)
+//	ticks, clkLimiter := ClockLimiter(time.Second/20e6, 16*time.Millisecond)
+//
+//	// wrap clkLimiter into a custom ticker
+//	vm.Tick(ticks, func(i *vm.Instance) {
+//		// call the clock limiter
+//		clkLimiter(i)
+//		// update game engine
+//		game.Update(i)
+//	})
+//
+func ClockLimiter(period, resolution time.Duration) (ticker func(i *Instance), ticks int64) {
+	if period <= 0 {
+		return nil, 0
+	}
+	if resolution <= 0 {
+		// do sleep at least every 16ms (in order to be able to sync with a game's frame rate at 60fps)
+		resolution = 16 * time.Millisecond
+	}
+	if resolution < period {
+		resolution = period
+	}
+	ticks = nextPow2(int64(resolution / period))
+	period = period * time.Duration(ticks)
+	// correct rounding errors
+	if period > resolution {
+		period /= 2
+		ticks /= 2
+	}
+
+	var start time.Time
+
+	return func(i *Instance) {
+		if start.IsZero() {
+			start = time.Now()
+			return
+		}
+		end := time.Now()
+		sleep := period - end.Sub(start)
+		if sleep >= 0 {
+			time.Sleep(sleep)
+		}
+		start = end.Add(sleep)
+	}, ticks
+}
+
+// Ticker configures the VM to run the fn function every n VM ticks.
+//
+// The ticks parameter is rounded up to the nearest power of two.
+// If ticks <= 0, fn will never be called.
+//
+// See ClockLimiter for an example use.
+//
+func Ticker(fn func(i *Instance), ticks int64) Option {
 	return func(i *Instance) error {
-		i.clockPeriod = period
+		i.tickFn = fn
+		if ticks > 0 {
+			i.tickMask = nextPow2(ticks) - 1
+		} else {
+			i.tickMask = -1
+		}
 		return nil
 	}
+}
+
+// returns the next power of 2 of n.
+func nextPow2(n int64) int64 {
+	n--
+	n |= n >> 1
+	n |= n >> 2
+	n |= n >> 4
+	n |= n >> 8
+	n |= n >> 16
+	n |= n >> 32
+	return n + 1
 }
 
 // DataSize sets the data stack size. It will not erase the stack, and will

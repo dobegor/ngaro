@@ -58,6 +58,14 @@ Test:
 	go test -i github.com/dobegor/ngaro/vm
 	go test -v github.com/dobegor/ngaro/vm/...
 
+## Contributing
+
+No rules, just common sense. Bells, wristles and any other preformance improvements are very
+welcome. The only changes that will never be accepted are those that will break compatibility
+with the VM specification.
+
+PRs are a good place to discuss changes so do not hesitate to send PRs directly. Or an issue, if your really have an issue.
+
 ## License
 
 This project is Copyright 2016 Denis Bernard <db047h@gmail.com>, licensed under
