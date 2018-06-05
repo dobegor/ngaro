@@ -16,11 +16,11 @@ Fork was created to:
 Also the 32 bit support was phased out.
 
 Current TODO:
-- assembler to parse float literals
-- interrupts support (`OpIRQ` and `OpINT` opcodes, external host-vm interrupts, runtime exception interrupts, such as divide by zero)
-- ability to dump / restore full VM state (memory, stacks, instruction pointer)
-- a simple language compiler with this VM as a target
-- update assembler docs and VM spec accordingly
+- [x] make the symbolic assembler able to parse float literals
+- [ ] interrupts support (`OpIRQ` and `OpINT` opcodes, external host-vm interrupts, runtime exception interrupts, such as divide by zero)
+- [ ] ability to dump / restore full VM state (memory, stacks, instruction pointer)
+- [ ] a simple language compiler with this VM as a target
+- [ ] update assembler docs and VM spec accordingly
 
 This repository contains the embeddable [virtual
 machine](https://godoc.org/github.com/dobegor/ngaro/vm) and a rudimentary
