@@ -23,6 +23,7 @@ import (
 	"strings"
 	"text/scanner"
 	"unicode"
+	"unsafe"
 
 	"github.com/dobegor/ngaro/vm"
 )
@@ -218,6 +219,14 @@ func (p *parser) scan() (tok rune, s string, v int) {
 	if err == nil {
 		return scanner.Int, s, int(n)
 	}
+
+	// check float
+	f, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		intrep := (*int64)(unsafe.Pointer(&f))
+		return scanner.Int, s, int(*intrep)
+	}
+
 	// check char
 	if len(s) >= 2 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		c, err := strconv.Unquote(s)
@@ -227,6 +236,7 @@ func (p *parser) scan() (tok rune, s string, v int) {
 		}
 		return scanner.Int, s, int([]rune(c)[0])
 	}
+
 	// check string
 	if len(s) >= 2 && s[0] == '"' {
 		for s[len(s)-1] != '"' {
@@ -245,6 +255,7 @@ func (p *parser) scan() (tok rune, s string, v int) {
 		}
 		return scanner.String, t, 0
 	}
+
 	// constant ?
 	c, ok := p.consts[s]
 	if ok {
