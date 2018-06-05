@@ -96,16 +96,6 @@ func (i *Instance) RDepth() int {
 	return i.rsp
 }
 
-// Drop removes the top item from the data stack.
-func (i *Instance) Drop() {
-	if i.sp == 0 {
-		panic(errors.New("data stack underflow"))
-	}
-
-	i.tos = i.data[i.sp]
-	i.sp--
-}
-
 // Drop2 removes the top two items from the data stack.
 func (i *Instance) Drop2() {
 	i.sp -= 2
@@ -226,7 +216,7 @@ func (i *Instance) Run() (err error) {
 			i.data[i.sp] = i.tos
 			i.PC++
 		case OpDrop:
-			i.Drop()
+			i.Pop()
 			i.PC++
 		case OpSwap:
 			i.tos, i.data[i.sp] = i.data[i.sp], i.tos
@@ -243,7 +233,7 @@ func (i *Instance) Run() (err error) {
 				i.tos = v
 				i.PC = int(i.Mem[i.PC+1])
 			} else {
-				i.Drop()
+				i.Pop()
 				i.PC += 2
 			}
 		case OpJump:
@@ -325,7 +315,7 @@ func (i *Instance) Run() (err error) {
 		case OpZeroExit:
 			if i.tos == 0 {
 				i.PC = int(i.Rpop() + 1)
-				i.Drop()
+				i.Pop()
 			} else {
 				i.PC++
 			}
@@ -338,7 +328,7 @@ func (i *Instance) Run() (err error) {
 		case OpIn:
 			port := i.tos
 			if h := i.inH[port]; h != nil {
-				i.Drop()
+				i.Pop()
 				if err = h(i, port); err != nil {
 					return errors.Wrap(err, "IN failed")
 				}
