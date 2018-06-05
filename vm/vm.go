@@ -32,10 +32,7 @@ const (
 
 // Bits per Cell
 const (
-	// Compute the size of a Cell
-	_m       = ^uCell(0)
-	_log     = _m>>8&1 + _m>>16&1 + (_m>>31)>>1&1 // >>31>>1 is to trick go vet
-	CellBits = (1 << _log) << 3
+	CellBits = 64
 )
 
 // Instance represents an Ngaro VM instance.

@@ -16,6 +16,20 @@
 
 package vm
 
-// Cell is the basic type stored in a VM memory location.
+import "unsafe"
+
+// Cell is the basic type stored in a VM memory location
 type Cell int
-type uCell uint
+
+// FCell is the floating point representation of value stored in a VM memory location
+type FCell float64
+
+// AsFCell reinterprets Cell to FCell
+func (c *Cell) AsFCell() *FCell {
+	return (*FCell)(unsafe.Pointer(c))
+}
+
+// AsCell reinterprets FCell to Cell
+func (f *FCell) AsCell() *Cell {
+	return (*Cell)(unsafe.Pointer(f))
+}

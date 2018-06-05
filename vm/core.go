@@ -17,8 +17,6 @@
 package vm
 
 import (
-	"unsafe"
-
 	"github.com/pkg/errors"
 )
 
@@ -62,6 +60,10 @@ const (
 	OpFDiv
 	OpFtoi
 	OpItof
+	OpFGtJump
+	OpFLtJump
+	OpFNeJump
+	OpFEqJump
 )
 
 // Tos returns the value of the Top item On the data Stack. Always returns 0 if
@@ -371,47 +373,62 @@ func (i *Instance) Run() (err error) {
 				}
 			}
 			i.PC++
+
+		// Extended opcodes
 		case OpCall:
 			i.Rpush(Cell(i.PC + 1))
 			i.PC = int(i.Mem[i.PC+1])
 		case OpFAdd:
 			rhs := i.Pop()
-
-			lhsf := (*float64)(unsafe.Pointer(&i.tos))
-			*lhsf += *(*float64)(unsafe.Pointer(&rhs))
-
+			*i.tos.AsFCell() += *rhs.AsFCell()
 			i.PC++
 		case OpFSub:
 			rhs := i.Pop()
-
-			lhsf := (*float64)(unsafe.Pointer(&i.tos))
-			*lhsf -= *(*float64)(unsafe.Pointer(&rhs))
-
+			*i.tos.AsFCell() -= *rhs.AsFCell()
 			i.PC++
 		case OpFMul:
 			rhs := i.Pop()
-
-			lhsf := (*float64)(unsafe.Pointer(&i.tos))
-			*lhsf *= *(*float64)(unsafe.Pointer(&rhs))
-
+			*i.tos.AsFCell() *= *rhs.AsFCell()
 			i.PC++
 		case OpFDiv:
 			rhs := i.Pop()
-
-			lhsf := (*float64)(unsafe.Pointer(&i.tos))
-			*lhsf /= *(*float64)(unsafe.Pointer(&rhs))
-
+			*i.tos.AsFCell() /= *rhs.AsFCell()
 			i.PC++
 		case OpItof:
-			f := (*float64)(unsafe.Pointer(&i.tos))
-			*f = float64(i.tos)
-
+			*i.tos.AsFCell() = FCell(i.tos)
 			i.PC++
 		case OpFtoi:
-			f := *(*float64)(unsafe.Pointer(&i.tos))
-			i.tos = Cell(f)
-
+			i.tos = Cell(*i.tos.AsFCell())
 			i.PC++
+		case OpFGtJump:
+			if *i.data[i.sp].AsFCell() > *i.tos.AsFCell() {
+				i.PC = int(i.Mem[i.PC+1])
+			} else {
+				i.PC += 2
+			}
+			i.Drop2()
+		case OpFLtJump:
+			if *i.data[i.sp].AsFCell() < *i.tos.AsFCell() {
+				i.PC = int(i.Mem[i.PC+1])
+			} else {
+				i.PC += 2
+			}
+			i.Drop2()
+		case OpFNeJump:
+			if *i.data[i.sp].AsFCell() != *i.tos.AsFCell() {
+				i.PC = int(i.Mem[i.PC+1])
+			} else {
+				i.PC += 2
+			}
+			i.Drop2()
+		case OpFEqJump:
+			if *i.data[i.sp].AsFCell() == *i.tos.AsFCell() {
+				i.PC = int(i.Mem[i.PC+1])
+			} else {
+				i.PC += 2
+			}
+			i.Drop2()
+
 		default:
 			if op < 0 && i.opHandler != nil {
 				// custom opcode

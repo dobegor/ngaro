@@ -21,12 +21,22 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"unsafe"
 
 	"github.com/dobegor/ngaro/asm"
 	"github.com/dobegor/ngaro/vm"
 )
 
 type C []vm.Cell
+type FC []vm.FCell
+
+func (c C) ToFC() FC {
+	return *(*FC)(unsafe.Pointer(&c))
+}
+
+func (c FC) ToC() C {
+	return *(*C)(unsafe.Pointer(&c))
+}
 
 var imageBits = 32
 
@@ -81,7 +91,7 @@ func check(t *testing.T, testName string, i *vm.Instance, ip int, stack C, rstac
 		t.Errorf("%v", fmt.Errorf("%s: Bad IP %d != %d", testName, i.PC, ip))
 		return false
 	}
-	stk := i.Data()
+	stk := C(i.Data())
 	diff := len(stk) != len(stack)
 	if !diff {
 		for i := range stack {
@@ -93,6 +103,7 @@ func check(t *testing.T, testName string, i *vm.Instance, ip int, stack C, rstac
 	}
 	if diff {
 		t.Errorf("%v", fmt.Errorf("%s: Stack error: expected %d, got %d", testName, stack, stk))
+		t.Errorf("%v", fmt.Errorf("%s: Stack error (float): expected %f, got %f", testName, stack.ToFC(), stk.ToFC()))
 		return false
 	}
 	stk = i.Address()
@@ -115,7 +126,7 @@ func check(t *testing.T, testName string, i *vm.Instance, ip int, stack C, rstac
 var tests = [...]struct {
 	name    string
 	code    string
-	data    []vm.Cell
+	data    interface{}
 	address []vm.Cell
 	pc      int
 }{
@@ -153,6 +164,14 @@ var tests = [...]struct {
 	{"@", "1234 drop   0 @   1 @", C{1, 1234}, nil, -1},
 	{"!", "42 lit foo 1+ ! :foo lit 0", C{42}, nil, -1},
 	{"io", "-1 5 out wait 5 in", C{9}, nil, -1},
+	{"fadd", "2.0 3.0 f+  2.0 -3.0 f+", FC{5, -1}, nil, -1},
+	{"fsub", "2.0 1.0 f-  1.0  2.0 f-  1.0 -2.0 f-  -1.0 -2.0 f-", FC{1, -1, 3, 1}, nil, -1},
+	{"fmul", "0.0 5.0 f*  1.0  5.0 f*  5.0 5.0 f*", FC{0, 5, 25}, nil, -1},
+	{"fdiv", "25.0 5.0 f/  26.0 5.0 f/", FC{5, 5.2}, nil, -1},
+	{"<fjump", "2.0 1.0 <fjump END 12.0 1.0 2.0 <fjump END 21 :END", FC{12}, nil, -1},
+	{">fjump", "1.0 2.0 >fjump END 21.0 2.0 1.0 >fjump END 12 :END", FC{21}, nil, -1},
+	{"!fjump", "1.0 1.0 !fjump END 11.0 1.0 0.0 !fjump END 10 :END", FC{11}, nil, -1},
+	{"=fjump", "1.0 0.0 =fjump END 10.0 1.0 1.0 =fjump END 11 :END", FC{10}, nil, -1},
 }
 
 func TestCore(t *testing.T) {
@@ -164,7 +183,17 @@ func TestCore(t *testing.T) {
 		}
 		p := setup(as, nil, nil)
 
-		if !check(t, test.name, p, test.pc, test.data, test.address) {
+		var testData C
+		switch test.data.(type) {
+		case C:
+			testData = test.data.(C)
+		case FC:
+			testData = test.data.(FC).ToC()
+		case nil:
+			testData = nil
+		}
+
+		if !check(t, test.name, p, test.pc, testData, test.address) {
 			// disasm
 			var b bytes.Buffer
 			b.WriteString(test.name)

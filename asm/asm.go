@@ -57,12 +57,16 @@ var opcodes = [...][]string{
 	{"out"},
 	{"wait"},
 	{"call"},
-	{"fadd"},
-	{"fsub"},
-	{"fmul"},
-	{"fdiv"},
+	{"f+", "fadd"},
+	{"f-", "fsub"},
+	{"f*", "fmul"},
+	{"f/", "fdiv"},
 	{"ftoi"},
 	{"itof"},
+	{">fjump", "fjgt"},
+	{"<fjump", "fjlt"},
+	{"!fjump", "fjne"},
+	{"=fjump", "fjeq"},
 }
 
 // Assemble compiles assembly read from the supplied io.Reader and returns the
