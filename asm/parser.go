@@ -224,7 +224,7 @@ func (p *parser) scan() (tok rune, s string, v int) {
 	f, err := strconv.ParseFloat(s, 64)
 	if err == nil {
 		intrep := (*int64)(unsafe.Pointer(&f))
-		return scanner.Int, s, int(*intrep)
+		return scanner.Float, s, int(*intrep)
 	}
 
 	// check char
@@ -270,11 +270,12 @@ func (p *parser) scan() (tok rune, s string, v int) {
 func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 	// state:
 	// 0: accept anything
-	// 1: need integer, const or label argument (lit, loop and jumps)
+	// 1: need integer, const or label argument (loop and jumps)
 	// 2: accept integer or const (for .org directive)
 	// 3: accept integer or const (for .equ value)
 	// 4: accept integer or const (for .opcode)
 	// 5: accept integer, const, label or string argument
+	// 6: need integer, float, const or label argument (lit)
 	var state int
 
 	p.s.Init(r)
@@ -311,6 +312,21 @@ func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 			default: // (1 || 5)
 				// argument
 				p.write(vm.Cell(v))
+			}
+			state = 0
+		case scanner.Float:
+			switch state {
+			case 0:
+				// implicit lit
+				p.write(vm.OpLit)
+				fallthrough
+			case 5, 6:
+				// argument
+				p.write(vm.Cell(v))
+			default:
+				p.error("float can only be used as a literal")
+				state = 0
+				break s
 			}
 			state = 0
 		case scanner.String:
@@ -361,7 +377,7 @@ func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 							nil,
 						}
 					}
-				case 1, 5:
+				case 1, 5, 6:
 					p.makeLabelRef(s)
 					p.write(0)
 					state = 0
@@ -414,7 +430,7 @@ func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 					}
 					break s
 				}
-				if state != 5 && state >= 2 {
+				if state != 5 && state != 6 && state >= 2 {
 					p.error("Unexpected label as directive argument: " + s)
 					// attempt to continue parsing with state = 0
 					state = 0
@@ -423,8 +439,10 @@ func (p *parser) Parse(name string, r io.Reader) ([]vm.Cell, error) {
 				if op, ok := p.opcodes[s]; state == 0 && ok {
 					p.write(op)
 					switch op {
-					case vm.OpLit, vm.OpLoop, vm.OpJump, vm.OpGtJump, vm.OpLtJump, vm.OpNeJump, vm.OpEqJump, vm.OpCall:
+					case vm.OpLoop, vm.OpJump, vm.OpGtJump, vm.OpLtJump, vm.OpNeJump, vm.OpEqJump, vm.OpCall:
 						state = 1
+					case vm.OpLit:
+						state = 6
 					}
 				} else {
 					p.makeLabelRef(s)
