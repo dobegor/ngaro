@@ -357,13 +357,6 @@ func TestVM_Drop2(t *testing.T) {
 		panic(err)
 	}
 	assertEqualI(t, test, 0, int(i.Depth()))
-	i.Drop2()
-	assertEqualI(t, test, 0, int(i.Depth()))
-	assertEqualI(t, test, 0, int(i.Tos()))
-	assertEqualI(t, test, 0, int(i.Nos()))
-	i.Push(4)
-	i.Drop2()
-	assertEqualI(t, test, 0, int(i.Depth()))
 	assertEqualI(t, test, 0, int(i.Tos()))
 	assertEqualI(t, test, 0, int(i.Nos()))
 	i.Push(4)

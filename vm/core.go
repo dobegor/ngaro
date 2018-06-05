@@ -100,7 +100,7 @@ func (i *Instance) RDepth() int {
 func (i *Instance) Drop2() {
 	i.sp -= 2
 	if i.sp < 0 {
-		i.sp = 0
+		panic(errors.New("data stack underflow"))
 	}
 	i.tos = i.data[i.sp+1] // NOTE: this works because i.data[0:2] is always 0
 }
