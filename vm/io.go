@@ -143,7 +143,10 @@ func (i *Instance) Wait(v, port Cell) error {
 		}
 	case 2: // output
 		if v == 1 {
-			c := i.Pop()
+			c, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			if i.output != nil {
 				var err error
 				if c < 0 {
@@ -169,11 +172,13 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.WaitReply(0, 4)
 			case 2: // include file
 				i.WaitReply(0, 4)
-				var (
-					f    *os.File
-					err  error
-					addr = i.Pop()
-				)
+				var f *os.File
+				var err error
+				addr, err2 := i.Pop()
+				if err2 != nil {
+					return err2
+				}
+
 				if i.sEnc != nil {
 					f, err = os.Open(string(i.sEnc.Decode(i.Mem, addr)))
 					if err != nil {
@@ -191,7 +196,11 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.Drop2()
 				i.WaitReply(fd, 4)
 			case -2: // read byte
-				f := i.files[i.Pop()]
+				v, err := i.Pop()
+				if err != nil {
+					return err
+				}
+				f := i.files[v]
 				if f != nil {
 					f.Read(b[:])
 				}
@@ -207,7 +216,10 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.WaitReply(Cell(l), 4)
 			case -4: // close fd
 				var ret Cell = 1
-				id := i.Pop()
+				id, err := i.Pop()
+				if err != nil {
+					return err
+				}
 				if f := i.files[id]; f != nil {
 					if err := f.Close(); err == nil {
 						i.files[id] = nil
@@ -218,7 +230,11 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.WaitReply(ret, 4)
 			case -5: // ftell
 				var p int64
-				if f := i.files[i.Pop()]; f != nil {
+				v, err := i.Pop()
+				if err != nil {
+					return err
+				}
+				if f := i.files[v]; f != nil {
 					p, _ = f.Seek(0, 1)
 				}
 				i.WaitReply(Cell(p), 4)
@@ -232,7 +248,11 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.WaitReply(Cell(p), 4)
 			case -7: // file size
 				var sz Cell
-				if f := i.files[i.Pop()]; f != nil {
+				v, err := i.Pop()
+				if err != nil {
+					return err
+				}
+				if f := i.files[v]; f != nil {
 					if fi, err := f.Stat(); err == nil {
 						sz = Cell(fi.Size())
 					}
@@ -240,7 +260,10 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.WaitReply(sz, 4)
 			case -8: // delete
 				var r Cell
-				addr := i.Pop()
+				addr, err := i.Pop()
+				if err != nil {
+					return err
+				}
 				if i.sEnc != nil {
 					if os.Remove(string(i.sEnc.Decode(i.Mem, addr))) == nil {
 						r = -1
@@ -324,9 +347,17 @@ func (i *Instance) Wait(v, port Cell) error {
 				i.output.MoveCursor(int(i.tos), int(i.data[i.sp]))
 				i.Drop2()
 			case 2:
-				i.output.FgColor(int(i.Pop()))
+				v, err := i.Pop()
+				if err != nil {
+					return err
+				}
+				i.output.FgColor(int(v))
 			case 3:
-				i.output.BgColor(int(i.Pop()))
+				v, err := i.Pop()
+				if err != nil {
+					return err
+				}
+				i.output.BgColor(int(v))
 			}
 			i.WaitReply(0, 8)
 		}

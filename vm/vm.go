@@ -62,6 +62,7 @@ type Instance struct {
 	tickFn    func(i *Instance)
 	stopped   bool
 	stopCh    chan struct{}
+	interrupt int
 }
 
 // An Option is a function for setting a VM Instance's options in New.

@@ -66,6 +66,10 @@ const (
 	OpFEqJump
 )
 
+var (
+	ErrDataStackUnderflow = errors.New("data stack underflow")
+)
+
 // Tos returns the value of the Top item On the data Stack. Always returns 0 if
 // Instance.Depth() is 0.
 func (i *Instance) Tos() Cell {
@@ -100,7 +104,8 @@ func (i *Instance) RDepth() int {
 func (i *Instance) Drop2() {
 	i.sp -= 2
 	if i.sp < 0 {
-		panic(errors.New("data stack underflow"))
+		i.interrupt = 42
+		//panic(errors.New("data stack underflow"))
 	}
 	i.tos = i.data[i.sp+1] // NOTE: this works because i.data[0:2] is always 0
 }
@@ -112,15 +117,17 @@ func (i *Instance) Push(v Cell) {
 }
 
 // Pop pops the value on top of the data stack and returns it.
-func (i *Instance) Pop() Cell {
+func (i *Instance) Pop() (Cell, error) {
 	if i.sp == 0 {
-		panic(errors.New("data stack underflow"))
+		i.interrupt = 42
+		return 0, ErrDataStackUnderflow
+		//panic(errors.New("data stack underflow"))
 	}
 
 	tos := i.tos
 	i.tos = i.data[i.sp]
 	i.sp--
-	return tos
+	return tos, nil
 }
 
 // Rpush pushes the argument on top of the address stack.
@@ -132,7 +139,8 @@ func (i *Instance) Rpush(v Cell) {
 // Rpop pops the value on top of the address stack and returns it.
 func (i *Instance) Rpop() Cell {
 	if i.rsp == 0 {
-		panic(errors.New("return stack underflow"))
+		i.interrupt = 42
+		//panic(errors.New("return stack underflow"))
 	}
 
 	rtos := i.rtos
@@ -183,17 +191,17 @@ func (i *Instance) Stopped() bool {
 func (i *Instance) Run() (err error) {
 	i.stopped = false
 
-	defer func() {
-		if e := recover(); e != nil {
-			switch e := e.(type) {
-			case error:
-				err = errors.Wrapf(e, "Recovered error @pc=%d/%d, stack %d/%d, rstack %d/%d",
-					i.PC, len(i.Mem), i.sp, len(i.data)-1, i.rsp, len(i.address)-1)
-			default:
-				panic(e)
-			}
-		}
-	}()
+	// defer func() {
+	// 	if e := recover(); e != nil {
+	// 		switch e := e.(type) {
+	// 		case error:
+	// 			err = errors.Wrapf(e, "Recovered error @pc=%d/%d, stack %d/%d, rstack %d/%d",
+	// 				i.PC, len(i.Mem), i.sp, len(i.data)-1, i.rsp, len(i.address)-1)
+	// 		default:
+	// 			panic(e)
+	// 		}
+	// 	}
+	// }()
 
 	i.insCount = 0
 	for i.PC < len(i.Mem) {
@@ -222,7 +230,11 @@ func (i *Instance) Run() (err error) {
 			i.tos, i.data[i.sp] = i.data[i.sp], i.tos
 			i.PC++
 		case OpPush:
-			i.Rpush(i.Pop())
+			v, err := i.Pop()
+			if err != nil {
+				return err
+			}
+			i.Rpush(v)
 			i.PC++
 		case OpPop:
 			i.Push(i.Rpop())
@@ -276,15 +288,24 @@ func (i *Instance) Run() (err error) {
 			i.Drop2()
 			i.PC++
 		case OpAdd:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos += rhs
 			i.PC++
 		case OpSub:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos -= rhs
 			i.PC++
 		case OpMul:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos *= rhs
 			i.PC++
 		case OpDimod:
@@ -293,23 +314,38 @@ func (i *Instance) Run() (err error) {
 			i.tos = lhs / rhs
 			i.PC++
 		case OpAnd:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos &= rhs
 			i.PC++
 		case OpOr:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos |= rhs
 			i.PC++
 		case OpXor:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos ^= rhs
 			i.PC++
 		case OpShl:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos <<= uint8(rhs)
 			i.PC++
 		case OpShr:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			i.tos >>= uint8(rhs)
 			i.PC++
 		case OpZeroExit:
@@ -369,19 +405,31 @@ func (i *Instance) Run() (err error) {
 			i.Rpush(Cell(i.PC + 1))
 			i.PC = int(i.Mem[i.PC+1])
 		case OpFAdd:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			*i.tos.AsFCell() += *rhs.AsFCell()
 			i.PC++
 		case OpFSub:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			*i.tos.AsFCell() -= *rhs.AsFCell()
 			i.PC++
 		case OpFMul:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			*i.tos.AsFCell() *= *rhs.AsFCell()
 			i.PC++
 		case OpFDiv:
-			rhs := i.Pop()
+			rhs, err := i.Pop()
+			if err != nil {
+				return err
+			}
 			*i.tos.AsFCell() /= *rhs.AsFCell()
 			i.PC++
 		case OpItof:
